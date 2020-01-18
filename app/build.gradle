@@ -115,6 +115,7 @@ android {
         xiaomi {}
         kuan {}
         google {}
+        exthm {}
         productFlavors.all {flavor ->
             flavor.manifestPlaceholders = [CHANNEL_VALUE: name]
         }

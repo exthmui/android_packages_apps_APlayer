@@ -409,4 +409,7 @@
   <string name="deleting">Deleting</string>
   <string name="adding">Adding</string>
   <string name="send_log">Whether to send log at the same time?</string>
+  <string name="thanks_text">"Thanks for CoolApk ID @Lin_kin_p open source project ! "</string>
+  <string name="thanks_summary">This software has been authorized to modify \n and release based on the GPL V3 protocol.</string>
+  <string name="touhou">You found a new hidden entrance!</string>
 </resources>

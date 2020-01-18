@@ -152,7 +152,7 @@ class SettingActivity : ToolbarActivity(), FolderChooserDialog.FolderCallback, F
   @BindViews(R.id.setting_common_title, R.id.setting_color_title, R.id.setting_cover_title, R.id.setting_library_title, R.id.setting_lrc_title, R.id.setting_notify_title, R.id.setting_other_title, R.id.setting_player_title, R.id.setting_play_title)
   lateinit var mTitles: Array<TextView>
 
-  @BindViews(R.id.setting_eq_arrow, R.id.setting_feedback_arrow, R.id.setting_about_arrow, R.id.setting_update_arrow)
+  @BindViews(R.id.setting_eq_arrow, R.id.setting_feedback_arrow, R.id.setting_about_arrow)
   lateinit var mArrows: Array<ImageView>
 
   //是否需要重建activity
@@ -304,9 +304,6 @@ class SettingActivity : ToolbarActivity(), FolderChooserDialog.FolderCallback, F
       }
     }.start()
 
-    if (IS_GOOGLEPLAY) {
-      findViewById<View>(R.id.setting_update_container).visibility = View.GONE
-    }
   }
 
 
@@ -431,7 +428,7 @@ class SettingActivity : ToolbarActivity(), FolderChooserDialog.FolderCallback, F
   }
 
   @SuppressLint("CheckResult")
-  @OnClick(R.id.setting_filter_container, R.id.setting_primary_color_container, R.id.setting_notify_color_container, R.id.setting_feedback_container, R.id.setting_about_container, R.id.setting_update_container, R.id.setting_lockscreen_container, R.id.setting_lrc_priority_container, R.id.setting_lrc_float_container, R.id.setting_navigation_container, R.id.setting_shake_container, R.id.setting_eq_container, R.id.setting_clear_container, R.id.setting_breakpoint_container, R.id.setting_screen_container, R.id.setting_scan_container, R.id.setting_classic_notify_container, R.id.setting_album_cover_container, R.id.setting_library_category_container, R.id.setting_immersive_container, R.id.setting_import_playlist_container, R.id.setting_export_playlist_container, R.id.setting_ignore_mediastore_container, R.id.setting_cover_source_container, R.id.setting_player_bottom_container, R.id.setting_restore_delete_container, R.id.setting_displayname_container, R.id.setting_general_theme_container, R.id.setting_accent_color_container, R.id.setting_language_container, R.id.setting_auto_play_headset_container, R.id.setting_audio_focus_container)
+  @OnClick(R.id.setting_filter_container, R.id.setting_primary_color_container, R.id.setting_notify_color_container, R.id.setting_feedback_container, R.id.setting_about_container, R.id.setting_lockscreen_container, R.id.setting_lrc_priority_container, R.id.setting_lrc_float_container, R.id.setting_navigation_container, R.id.setting_shake_container, R.id.setting_eq_container, R.id.setting_clear_container, R.id.setting_breakpoint_container, R.id.setting_screen_container, R.id.setting_scan_container, R.id.setting_classic_notify_container, R.id.setting_album_cover_container, R.id.setting_library_category_container, R.id.setting_immersive_container, R.id.setting_import_playlist_container, R.id.setting_export_playlist_container, R.id.setting_ignore_mediastore_container, R.id.setting_cover_source_container, R.id.setting_player_bottom_container, R.id.setting_restore_delete_container, R.id.setting_displayname_container, R.id.setting_general_theme_container, R.id.setting_accent_color_container, R.id.setting_language_container, R.id.setting_auto_play_headset_container, R.id.setting_audio_focus_container)
   fun onClick(v: View) {
     when (v.id) {
       //文件过滤
@@ -491,12 +488,6 @@ class SettingActivity : ToolbarActivity(), FolderChooserDialog.FolderCallback, F
       R.id.setting_feedback_container -> gotoEmail()
       //关于我们
       R.id.setting_about_container -> startActivity(Intent(this, AboutActivity::class.java))
-      //检查更新
-      R.id.setting_update_container -> {
-        UpdateAgent.forceCheck = true
-        UpdateAgent.listener = UpdateListener(mContext)
-        UpdateAgent.check(this)
-      }
       //清除缓存
       R.id.setting_clear_container -> clearCache()
       //通知栏样式

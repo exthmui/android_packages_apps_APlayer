@@ -409,4 +409,7 @@
   <string name="deleting">删除中</string>
   <string name="adding">添加中</string>
   <string name="send_log">是否同时发送日志?</string>
+  <string name="thanks_text">感谢酷安ID@Lin_kin_p的开源项目！</string>
+  <string name="thanks_summary">本软件已授权，基于GPL v3协议重新修改发布。</string>
+  <string name="touhou">你找到了一个新的隐藏入口！</string>
 </resources>
