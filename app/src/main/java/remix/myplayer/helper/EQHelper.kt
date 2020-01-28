@@ -8,7 +8,6 @@ import android.media.audiofx.BassBoost
 import android.media.audiofx.Equalizer
 import android.media.audiofx.Virtualizer
 import android.widget.Toast
-import com.tencent.bugly.crashreport.CrashReport
 import remix.myplayer.App
 import remix.myplayer.R
 import remix.myplayer.ui.activity.EQActivity
@@ -323,7 +322,7 @@ object EQHelper {
     } catch (e: Exception) {
       Timber.w(e)
       error()
-      CrashReport.postCatchedException(e)
+      e.printStackTrace()
     } finally {
     }
   }

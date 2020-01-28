@@ -5,7 +5,6 @@ import android.content.Context
 import android.database.Cursor
 import android.provider.MediaStore
 import com.google.gson.Gson
-import com.tencent.bugly.crashreport.CrashReport
 import io.reactivex.Completable
 import io.reactivex.CompletableSource
 import io.reactivex.Single
@@ -88,7 +87,7 @@ class DatabaseRepository private constructor() {
           count += db.playQueueDao().deleteSongs(audioIds.subList(i * MAX_ARGUMENT_COUNT, lastIndex))
         } catch (e: Exception) {
           Timber.e(e)
-          CrashReport.postCatchedException(e)
+          e.printStackTrace()
         }
       }
       Timber.v("deleteFromPlayQueueInternal, count: $count")

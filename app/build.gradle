@@ -2,12 +2,6 @@ apply plugin: 'com.android.application'
 apply plugin: 'kotlin-android'
 apply plugin: 'kotlin-android-extensions'
 apply plugin: 'kotlin-kapt'
-apply plugin: 'bugly'
-
-bugly {
-    appId = "${getProperty(getProperties('../local.properties'), 'BUGLY_APPID')}"
-    appKey = "04ab39c8-86fc-4ed6-b28b-6fdfee6e19d9"
-}
 
 repositories {
     maven {
@@ -195,9 +189,6 @@ dependencies {
     //butterKnife
     implementation 'com.jakewharton:butterknife:9.0.0'
     kapt 'com.jakewharton:butterknife-compiler:9.0.0'
-
-    //bugly
-    implementation 'com.tencent.bugly:crashreport:3.0.0'
 
     //gp
     implementation 'com.anjlab.android.iab.v3:library:1.0.44'

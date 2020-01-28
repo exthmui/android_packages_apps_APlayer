@@ -18,8 +18,6 @@ import com.facebook.common.util.ByteConstants;
 import com.facebook.drawee.backends.pipeline.Fresco;
 import com.facebook.imagepipeline.cache.MemoryCacheParams;
 import com.facebook.imagepipeline.core.ImagePipelineConfig;
-import com.tencent.bugly.crashreport.CrashReport;
-import com.tencent.bugly.crashreport.CrashReport.UserStrategy;
 import io.reactivex.Completable;
 import io.reactivex.android.schedulers.AndroidSchedulers;
 import io.reactivex.plugins.RxJavaPlugins;
@@ -73,7 +71,7 @@ public class App extends MultiDexApplication implements ActivityLifecycleCallbac
     // 处理 RxJava2 取消订阅后，抛出的异常无法捕获，导致程序崩溃
     RxJavaPlugins.setErrorHandler(throwable -> {
       Timber.v(throwable);
-      CrashReport.postCatchedException(throwable);
+      throwable.printStackTrace();
     });
 
     registerActivityLifecycleCallbacks(this);
@@ -112,11 +110,6 @@ public class App extends MultiDexApplication implements ActivityLifecycleCallbac
     String packageName = context.getPackageName();
     // 获取当前进程名
     String processName = Util.getProcessName(android.os.Process.myPid());
-    // 设置是否为上报进程
-    UserStrategy strategy = new UserStrategy(context);
-    strategy.setUploadProcess(processName == null || processName.equals(packageName));
-    CrashReport.initCrashReport(this, BuildConfig.BUGLY_APPID, BuildConfig.DEBUG, strategy);
-    CrashReport.setIsDevelopmentDevice(this, BuildConfig.DEBUG);
 
     // fresco
     final int cacheSize = (int) (Runtime.getRuntime().maxMemory() / 8);
