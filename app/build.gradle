@@ -18,7 +18,7 @@ android {
 //    buildToolsVersion '28.0.3'
 
     defaultConfig {
-        applicationId "remix.myplayer"
+        applicationId "org.exthmui.remix.myplayer"
         minSdkVersion 17
         targetSdkVersion 28
 
