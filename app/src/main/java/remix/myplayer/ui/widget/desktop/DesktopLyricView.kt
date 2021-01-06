@@ -6,8 +6,8 @@ import android.graphics.PointF
 import android.os.Build.VERSION
 import android.os.Build.VERSION_CODES
 import android.os.Message
-import android.support.v7.widget.LinearLayoutManager
-import android.support.v7.widget.RecyclerView
+import androidx.recyclerview.widget.LinearLayoutManager
+import androidx.recyclerview.widget.RecyclerView
 import android.text.TextUtils
 import android.view.*
 import android.widget.ImageView
@@ -241,7 +241,6 @@ class DesktopLyricView(service: MusicService) : RelativeLayout(service) {
   }
 
   fun setText(lrc1: LrcRow?, lrc2: LrcRow?) {
-    Timber.v("lrc1: $lrc1  lrc2: $lrc2")
     if (lrc1 != null) {
       if (TextUtils.isEmpty(lrc1.content)) {
         lrc1.content = "......"

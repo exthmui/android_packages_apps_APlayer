@@ -6,8 +6,8 @@ import android.content.Intent
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
 import android.os.Build
-import android.support.v4.app.NotificationCompat
-import android.support.v4.app.NotificationCompat.PRIORITY_MAX
+import androidx.core.app.NotificationCompat
+import androidx.core.app.NotificationCompat.PRIORITY_MAX
 import remix.myplayer.R
 import remix.myplayer.bean.mp3.Song
 import remix.myplayer.request.RemoteUriRequest
@@ -75,13 +75,13 @@ class NotifyImpl24(context: MusicService) : Notify(context) {
             buildPendingIntent(service, if (desktopLyricLock) Command.UNLOCK_DESKTOP_LYRIC else Command.TOGGLE_DESKTOP_LYRIC))
         .setDeleteIntent(buildPendingIntent(service, Command.CLOSE_NOTIFY))
         .setContentIntent(contentIntent)
-        .setContentTitle(song.title)
+        .setContentTitle(song.showName)
         .setLargeIcon(bitmap)
         .setShowWhen(false)
         .setOngoing(service.isPlaying)
         .setPriority(PRIORITY_MAX)
         .setContentText(song.artist + " - " + song.album)
-        .setStyle(android.support.v4.media.app.NotificationCompat.MediaStyle()
+        .setStyle(androidx.media.app.NotificationCompat.MediaStyle()
             .setShowActionsInCompactView(0, 1, 2, 3)
             .setMediaSession(service.mediaSession.sessionToken))
         .build()
@@ -92,8 +92,8 @@ class NotifyImpl24(context: MusicService) : Notify(context) {
     if (!service.isPlaying) return
     val song = service.currentSong
     val builder = NotificationCompat.Builder(service, PLAYING_NOTIFICATION_CHANNEL_ID)
-    builder.setContentText(song.title)
-            .setContentTitle(song.title)
+    builder.setContentText(song.artist + " - " + song.album)
+            .setContentTitle(song.showName)
             .setShowWhen(false)
             .setTicker(lrc)
             .setOngoing(service.isPlaying)

@@ -1,6 +1,6 @@
 package remix.myplayer.db.room
 
-import android.arch.persistence.db.SimpleSQLiteQuery
+import androidx.sqlite.db.SimpleSQLiteQuery
 import android.content.Context
 import android.database.Cursor
 import android.provider.MediaStore
@@ -427,6 +427,9 @@ class DatabaseRepository private constructor() {
   private fun getSongsWithSort(sort: String, ids: List<Int>): Single<List<Song>> {
     return Single
         .fromCallable {
+          if(ids.isEmpty()){
+            return@fromCallable Collections.emptyList<Song>()
+          }
           val customSort = sort == CUSTOMSORT
           val inStr = makeInStr(ids)
           val songs = MediaStoreUtil.getSongs(

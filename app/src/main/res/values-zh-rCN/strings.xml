@@ -336,7 +336,8 @@
   <string name="export_fail">导出失败:%s</string>
   <string name="export_success">导出成功</string>
   <string name="cover_download_source">封面下载源</string>
-  <string name="cover_download_source_tip">默认从LastFM下载</string>
+  <string name="cover_download_from_lastfm">从LastFm下载</string>
+  <string name="cover_download_from_netease">从网易下载</string>
   <string name="update_notification">更新通知</string>
   <string name="update_notification_description">更新通知用于展示下载进度</string>
   <string name="downloading">下载中</string>
@@ -370,7 +371,7 @@
   <string name="restore_songs">歌曲恢复</string>
   <string name="restore_songs_tip">恢复从曲库移除的歌曲</string>
   <string name="alread_restore_songs">已经恢复被移除的歌曲</string>
-  <string name="speed_range_tip">输入范围为0.5-1.5</string>
+  <string name="speed_range_tip">输入范围为0.5-2</string>
   <string name="show_displayname">歌曲列表显示文件名</string>
   <string name="show_displayname_tip">如果歌曲列表出现乱码可尝试开启该选项</string>
   <string name="accent_color">强调色</string>
@@ -413,4 +414,18 @@
   <string name="thanks_text">感谢酷安ID@Lin_kin_p的开源项目！</string>
   <string name="thanks_summary">本软件已授权，基于GPL v3协议重新修改发布。</string>
   <string name="touhou">你找到了一个新的隐藏入口！</string>
+  <string name="clear">清除</string>
+  <string name="add">添加</string>
+  <string name="clear_blacklist_title">清除黑名单</string>
+  <string name="clear_blacklist_content">确定清除黑名单吗?</string>
+  <string name="blacklist">黑名单</string>
+  <string name="remove_from_blacklist">从黑名单移除</string>
+  <string name="do_you_want_remove_from_blacklist">你想从黑名单移除%s吗?</string>
+  <string name="blacklist_tip">这些文件夹中的内容将会从您的媒体库中隐藏</string>
+  <string name="yes">是</string>
+  <string name="no">否</string>
+  <string name="now_playing_screen_background">播放界面背景</string>
+  <string name="now_playing_screen_theme">跟随主题</string>
+  <string name="now_playing_screen_cover">跟随专辑封面</string>
+  <string name="now_playing_screen_custom">自定义</string>
 </resources>

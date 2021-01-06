@@ -2,7 +2,9 @@ package remix.myplayer.ui.activity
 
 import android.annotation.SuppressLint
 import android.app.Activity
+import android.content.Context
 import android.content.Intent
+import android.content.SharedPreferences
 import android.content.pm.PackageManager
 import android.graphics.drawable.GradientDrawable
 import android.net.Uri
@@ -12,14 +14,14 @@ import android.os.Environment
 import android.os.Message
 import android.provider.MediaStore
 import android.provider.Settings
-import android.support.v4.content.FileProvider
-import android.support.v7.widget.SwitchCompat
 import android.text.TextUtils
 import android.view.View
 import android.widget.CompoundButton
 import android.widget.CompoundButton.OnCheckedChangeListener
 import android.widget.ImageView
 import android.widget.TextView
+import androidx.appcompat.widget.SwitchCompat
+import androidx.core.content.FileProvider
 import butterknife.BindView
 import butterknife.BindViews
 import butterknife.ButterKnife
@@ -29,8 +31,10 @@ import com.facebook.common.util.ByteConstants
 import com.facebook.drawee.backends.pipeline.Fresco
 import com.google.gson.Gson
 import com.google.gson.reflect.TypeToken
+import com.soundcloud.android.crop.Crop
 import io.reactivex.Single
 import io.reactivex.disposables.Disposable
+import kotlinx.android.synthetic.main.activity_setting.*
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import remix.myplayer.App.IS_GOOGLEPLAY
@@ -41,7 +45,6 @@ import remix.myplayer.bean.misc.Feedback
 import remix.myplayer.bean.mp3.Song
 import remix.myplayer.db.room.DatabaseRepository
 import remix.myplayer.helper.EQHelper
-import remix.myplayer.helper.EQHelper.REQUEST_EQ
 import remix.myplayer.helper.LanguageHelper
 import remix.myplayer.helper.LanguageHelper.AUTO
 import remix.myplayer.helper.M3UHelper.exportPlayListToFile
@@ -73,6 +76,9 @@ import remix.myplayer.ui.activity.MainActivity.Companion.EXTRA_CATEGORY
 import remix.myplayer.ui.activity.MainActivity.Companion.EXTRA_RECREATE
 import remix.myplayer.ui.activity.MainActivity.Companion.EXTRA_REFRESH_ADAPTER
 import remix.myplayer.ui.activity.MainActivity.Companion.EXTRA_REFRESH_LIBRARY
+import remix.myplayer.ui.activity.PlayerActivity.Companion.BACKGROUND_ADAPTIVE_COLOR
+import remix.myplayer.ui.activity.PlayerActivity.Companion.BACKGROUND_CUSTOM_IMAGE
+import remix.myplayer.ui.activity.PlayerActivity.Companion.BACKGROUND_THEME
 import remix.myplayer.ui.dialog.FileChooserDialog
 import remix.myplayer.ui.dialog.FolderChooserDialog
 import remix.myplayer.ui.dialog.FolderChooserDialog.Builder
@@ -85,7 +91,6 @@ import remix.myplayer.util.Util.isSupportStatusBarLyric
 import remix.myplayer.util.Util.sendLocalBroadcast
 import timber.log.Timber
 import java.io.File
-import java.util.*
 
 /**
  * @ClassName SettingActivity
@@ -94,7 +99,10 @@ import java.util.*
  * @Date 2016/8/23 13:51
  */
 //todo 重构整个界面
-class SettingActivity : ToolbarActivity(), FolderChooserDialog.FolderCallback, FileChooserDialog.FileCallback, ColorChooserDialog.ColorCallback {
+class SettingActivity : ToolbarActivity(), FolderChooserDialog.FolderCallback, FileChooserDialog.FileCallback,
+    ColorChooserDialog.ColorCallback, SharedPreferences.OnSharedPreferenceChangeListener{
+
+  private lateinit var checkedChangedListener: OnCheckedChangeListener
 
   @BindView(R.id.setting_color_primary_indicator)
   lateinit var mPrimaryColorSrc: ImageView
@@ -206,7 +214,7 @@ class SettingActivity : ToolbarActivity(), FolderChooserDialog.FolderCallback, F
       if (view.id == R.id.setting_navaigation_switch) {
         view.isEnabled = Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP
       }
-      view.setOnCheckedChangeListener(object : OnCheckedChangeListener {
+      checkedChangedListener = object : OnCheckedChangeListener {
         override fun onCheckedChanged(buttonView: CompoundButton, isChecked: Boolean) {
           SPUtil.putValue(mContext, SETTING_KEY.NAME, keyWord[index], isChecked)
           when (buttonView.id) {
@@ -266,7 +274,8 @@ class SettingActivity : ToolbarActivity(), FolderChooserDialog.FolderCallback, F
           }
 
         }
-      })
+      }
+      view.setOnCheckedChangeListener(checkedChangedListener)
     }
 
     //桌面歌词
@@ -284,7 +293,7 @@ class SettingActivity : ToolbarActivity(), FolderChooserDialog.FolderCallback, F
 
     //初始化箭头颜色
     val accentColor = getAccentColor()
-    ButterKnife.apply(mArrows) { view, index -> Theme.tintDrawable(view, view.background, accentColor) }
+    ButterKnife.apply(mArrows) { view, index -> Theme.tintDrawable(view, view.drawable, accentColor) }
 
     //标题颜色
     ButterKnife.apply(mTitles) { view, index -> view.setTextColor(accentColor) }
@@ -295,6 +304,11 @@ class SettingActivity : ToolbarActivity(), FolderChooserDialog.FolderCallback, F
             mContext.getString(R.string.always))
     mAlbumCoverText.text = mOriginalAlbumChoice
 
+    // 封面下载源
+    val coverSource = SPUtil.getValue(mContext, SETTING_KEY.NAME, SETTING_KEY.ALBUM_COVER_DOWNLOAD_SOURCE, 0)
+    setting_cover_source_text.text = getString(
+        if (coverSource == 0) R.string.cover_download_from_lastfm else R.string.cover_download_from_netease)
+
     //根据系统版本决定是否显示通知栏样式切换
     findViewById<View>(R.id.setting_classic_notify_container).visibility = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) View.VISIBLE else View.GONE
 
@@ -303,9 +317,13 @@ class SettingActivity : ToolbarActivity(), FolderChooserDialog.FolderCallback, F
 
     //锁屏样式
     val lockScreen = SPUtil.getValue(mContext, SETTING_KEY.NAME, SETTING_KEY.LOCKSCREEN, Constants.APLAYER_LOCKSCREEN)
-    mLockScreenTip.setText(if (lockScreen == 0)
-      R.string.aplayer_lockscreen_tip
-    else if (lockScreen == 1) R.string.system_lockscreen_tip else R.string.lockscreen_off_tip)
+    mLockScreenTip.setText(when (lockScreen) {
+      0 -> R.string.aplayer_lockscreen_tip
+      1 -> R.string.system_lockscreen_tip
+      else -> R.string.lockscreen_off_tip
+    })
+
+    updatePlayerBackgroundText()
 
     //计算缓存大小
     object : Thread() {
@@ -317,6 +335,18 @@ class SettingActivity : ToolbarActivity(), FolderChooserDialog.FolderCallback, F
       }
     }.start()
 
+    getSharedPreferences(SETTING_KEY.NAME, Context.MODE_PRIVATE).registerOnSharedPreferenceChangeListener(this)
+  }
+
+  private fun updatePlayerBackgroundText() {
+    //播放界面背景
+    val nowPlayingScreen = SPUtil.getValue(this, SETTING_KEY.NAME, SETTING_KEY.PLAYER_BACKGROUND, BACKGROUND_THEME)
+    setting_now_playing_screen_text.setText(when (nowPlayingScreen) {
+      BACKGROUND_THEME -> R.string.now_playing_screen_theme
+      BACKGROUND_ADAPTIVE_COLOR -> R.string.now_playing_screen_cover
+      BACKGROUND_CUSTOM_IMAGE -> R.string.now_playing_screen_custom
+      else -> R.string.now_playing_screen_theme
+    })
   }
 
 
@@ -335,6 +365,7 @@ class SettingActivity : ToolbarActivity(), FolderChooserDialog.FolderCallback, F
 
   override fun onFolderSelection(dialog: FolderChooserDialog, folder: File) {
     var tag = dialog.tag ?: return
+
     var playListName = ""
     try {
       if (tag.contains("ExportPlayList")) {
@@ -347,11 +378,6 @@ class SettingActivity : ToolbarActivity(), FolderChooserDialog.FolderCallback, F
     }
 
     when (tag) {
-      //            case "Lrc":
-      //                boolean success = SPUtil.putValue(this, SPUtil.SETTING_KEY.NAME, SPUtil.SETTING_KEY.LOCAL_LYRIC_SEARCH_DIR, folder.getAbsolutePath());
-      //                ToastUtil.show(this, success ? R.string.setting_success : R.string.setting_error, Toast.LENGTH_SHORT);
-      //                mLrcPath.setText(getString(R.string.lrc_tip, SPUtil.getValue(this, SPUtil.SETTING_KEY.NAME, SPUtil.SETTING_KEY.LOCAL_LYRIC_SEARCH_DIR, "")));
-      //                break;
       "Scan" -> {
         if (folder.exists() && folder.isDirectory && folder.list() != null) {
           SPUtil.putValue(this, SETTING_KEY.NAME, SETTING_KEY.MANUAL_SCAN_FOLDER, folder.absolutePath)
@@ -370,6 +396,15 @@ class SettingActivity : ToolbarActivity(), FolderChooserDialog.FolderCallback, F
         }
         mDisposables
             .add(exportPlayListToFile(this, playListName, File(folder, "$playListName.m3u")))
+      }
+      "BlackList" -> {
+        val blackList = LinkedHashSet(SPUtil.getStringSet(this, SETTING_KEY.NAME, SETTING_KEY.BLACKLIST))
+        if (folder.exists() && folder.isDirectory) {
+          blackList.add(folder.absolutePath)
+          SPUtil.putStringSet(this, SETTING_KEY.NAME, SETTING_KEY.BLACKLIST, blackList)
+          contentResolver.notifyChange(MediaStore.Audio.Media.EXTERNAL_CONTENT_URI, null)
+        }
+        configBlackList(blackList)
       }
     }
   }
@@ -441,11 +476,24 @@ class SettingActivity : ToolbarActivity(), FolderChooserDialog.FolderCallback, F
   }
 
   @SuppressLint("CheckResult")
-  @OnClick(R.id.setting_filter_container, R.id.setting_primary_color_container, R.id.setting_notify_color_container, R.id.setting_feedback_container, R.id.setting_about_container, R.id.setting_lockscreen_container, R.id.setting_lrc_priority_container, R.id.setting_lrc_float_container, R.id.setting_navigation_container, R.id.setting_shake_container, R.id.setting_eq_container, R.id.setting_clear_container, R.id.setting_breakpoint_container, R.id.setting_screen_container, R.id.setting_scan_container, R.id.setting_classic_notify_container, R.id.setting_album_cover_container, R.id.setting_library_category_container, R.id.setting_immersive_container, R.id.setting_import_playlist_container, R.id.setting_export_playlist_container, R.id.setting_ignore_mediastore_container, R.id.setting_cover_source_container, R.id.setting_player_bottom_container, R.id.setting_restore_delete_container, R.id.setting_displayname_container, R.id.setting_general_theme_container, R.id.setting_accent_color_container, R.id.setting_language_container, R.id.setting_auto_play_headset_container, R.id.setting_audio_focus_container)
+  @OnClick(R.id.setting_blacklist_container, R.id.setting_primary_color_container, R.id.setting_notify_color_container,
+      R.id.setting_feedback_container, R.id.setting_about_container,
+      R.id.setting_lockscreen_container, R.id.setting_lrc_priority_container, R.id.setting_lrc_float_container,
+      R.id.setting_navigation_container, R.id.setting_shake_container, R.id.setting_eq_container,
+      R.id.setting_clear_container, R.id.setting_breakpoint_container, R.id.setting_screen_container,
+      R.id.setting_scan_container, R.id.setting_classic_notify_container, R.id.setting_album_cover_container,
+      R.id.setting_library_category_container, R.id.setting_immersive_container, R.id.setting_import_playlist_container,
+      R.id.setting_export_playlist_container, R.id.setting_ignore_mediastore_container, R.id.setting_cover_source_container,
+      R.id.setting_player_bottom_container, R.id.setting_displayname_container, R.id.setting_general_theme_container,
+      R.id.setting_accent_color_container, R.id.setting_language_container, R.id.setting_auto_play_headset_container,
+      R.id.setting_audio_focus_container, R.id.setting_restore_delete_container,R.id.setting_filter_container,
+      R.id.setting_player_background)
   fun onClick(v: View) {
     when (v.id) {
-      //文件过滤
+      //大小过滤
       R.id.setting_filter_container -> configFilterSize()
+      //黑名单
+      R.id.setting_blacklist_container -> configBlackList()
       //曲库
       R.id.setting_library_category_container -> configLibraryCategory()
       //桌面歌词
@@ -533,7 +581,52 @@ class SettingActivity : ToolbarActivity(), FolderChooserDialog.FolderCallback, F
       R.id.setting_audio_focus_container -> mAudioFocusSwitch.isChecked = !mAudioFocusSwitch.isChecked
       //自动播放
       R.id.setting_auto_play_headset_container -> configAutoPlay()
+      //自定义播放界面背景
+      R.id.setting_player_background -> configPlayerBackgroundConfig()
     }
+  }
+
+  private fun configPlayerBackgroundConfig() {
+    val current = SPUtil.getValue(this, SETTING_KEY.NAME, SETTING_KEY.PLAYER_BACKGROUND, BACKGROUND_THEME)
+
+    getBaseDialog(this)
+        .items(R.array.player_background)
+        .itemsCallback { dialog, itemView, position, text ->
+          if (current == position && position != BACKGROUND_CUSTOM_IMAGE) {
+            return@itemsCallback
+          }
+
+          SPUtil.putValue(this, SETTING_KEY.NAME, SETTING_KEY.PLAYER_BACKGROUND, position)
+          updatePlayerBackgroundText()
+
+          if (position == BACKGROUND_CUSTOM_IMAGE) {
+            Crop.pickImage(this, Crop.REQUEST_PICK)
+          }
+        }
+        .show()
+  }
+
+  /**
+   * 配置过滤大小
+   */
+  private fun configFilterSize() {
+    //读取以前设置
+    var position = 0
+    for (i in mScanSize.indices) {
+      position = i
+      if (mScanSize[i] == MediaStoreUtil.SCAN_SIZE) {
+        break
+      }
+    }
+    getBaseDialog(mContext)
+        .title(R.string.set_filter_size)
+        .items("0K", "500K", "1MB", "2MB", "5MB")
+        .itemsCallbackSingleChoice(position) { dialog, itemView, which, text ->
+          SPUtil.putValue(mContext, SETTING_KEY.NAME, SETTING_KEY.SCAN_SIZE, mScanSize[which])
+          MediaStoreUtil.SCAN_SIZE = mScanSize[which]
+          contentResolver.notifyChange(MediaStore.Audio.Media.EXTERNAL_CONTENT_URI, null)
+          true
+        }.show()
   }
 
   private fun configAutoPlay() {
@@ -576,69 +669,72 @@ class SettingActivity : ToolbarActivity(), FolderChooserDialog.FolderCallback, F
   }
 
   private fun gotoEmail() {
+    fun send(sendLog: Boolean) {
+      val pm = packageManager
+      val pi = pm.getPackageInfo(packageName, PackageManager.GET_ACTIVITIES)
+      val feedBack = Feedback(
+          pi.versionName,
+          pi.versionCode.toString(),
+          Build.DISPLAY,
+          Build.CPU_ABI + "," + Build.CPU_ABI2,
+          Build.MANUFACTURER,
+          Build.MODEL,
+          Build.VERSION.RELEASE,
+          Build.VERSION.SDK_INT.toString()
+      )
+      val emailIntent = Intent()
+      emailIntent.putExtra(Intent.EXTRA_SUBJECT, getString(R.string.feedback))
+      emailIntent.putExtra(Intent.EXTRA_TEXT, "\n\n\n" + feedBack)
+
+      tryLaunch(catch = {
+        Timber.w(it)
+        ToastUtil.show(this, R.string.send_error, it.toString())
+      }, block = {
+        if (sendLog) {
+          withContext(Dispatchers.IO) {
+            try {
+              val zipFile = File("${Environment.getExternalStorageDirectory().absolutePath}/Android/data/$packageName/logs.zip")
+              zipFile.delete()
+              zipFile.createNewFile()
+              zipFile.zipOutputStream()
+                  .zipFrom("${Environment.getExternalStorageDirectory().absolutePath}/Android/data/$packageName/logs",
+                      "${applicationInfo.dataDir}/shared_prefs")
+              if (zipFile.length() > 0) {
+                val uri = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
+                  emailIntent.flags = Intent.FLAG_GRANT_READ_URI_PERMISSION
+                  FileProvider.getUriForFile(mContext, BuildConfig.APPLICATION_ID + ".fileprovider", zipFile)
+                } else {
+                  Uri.parse("file://${zipFile.absoluteFile}")
+                }
+                emailIntent.action = Intent.ACTION_SEND
+                emailIntent.type = "application/octet-stream"
+                emailIntent.putExtra(Intent.EXTRA_STREAM, uri)
+                emailIntent.putExtra(Intent.EXTRA_EMAIL, arrayOf(if (!IS_GOOGLEPLAY) "568920427@qq.com" else "rRemix.me@gmail.com"))
+              }
+            } catch (e: Exception) {
+              Timber.w(e)
+            }
+          }
+        } else {
+          emailIntent.action = Intent.ACTION_SENDTO
+          emailIntent.data = Uri.parse(if (!IS_GOOGLEPLAY) "mailto:568920427@qq.com" else "mailto:rRemix.me@gmail.com")
+        }
+
+        if (Util.isIntentAvailable(this, emailIntent)) {
+          startActivity(emailIntent)
+        } else {
+          ToastUtil.show(this, R.string.not_found_email)
+        }
+      })
+    }
     getBaseDialog(this)
         .title(getString(R.string.send_log))
-        .positiveText(R.string.confirm)
-        .negativeText(R.string.cancel)
-        .onAny { dialog, which ->
-          val pm = packageManager
-          val pi = pm.getPackageInfo(packageName, PackageManager.GET_ACTIVITIES)
-          val feedBack = Feedback(
-              pi.versionName,
-              pi.versionCode.toString(),
-              Build.DISPLAY,
-              Build.CPU_ABI + "," + Build.CPU_ABI2,
-              Build.MANUFACTURER,
-              Build.MODEL,
-              Build.VERSION.RELEASE,
-              Build.VERSION.SDK_INT.toString()
-          )
-          val emailIntent = Intent()
-          emailIntent.putExtra(Intent.EXTRA_SUBJECT, getString(R.string.feedback))
-          emailIntent.putExtra(Intent.EXTRA_TEXT, "\n\n\n" + feedBack)
-
-          tryLaunch(catch = {
-            Timber.w(it)
-            ToastUtil.show(this, R.string.send_error, it.toString())
-          }, block = {
-            if (which == DialogAction.POSITIVE) {
-              withContext(Dispatchers.IO) {
-                try {
-                  val zipFile = File("${Environment.getExternalStorageDirectory().absolutePath}/Android/data/$packageName/logs.zip")
-                  zipFile.delete()
-                  zipFile.createNewFile()
-                  zipFile.zipOutputStream()
-                      .zipFrom("${Environment.getExternalStorageDirectory().absolutePath}/Android/data/$packageName/logs",
-                          "${applicationInfo.dataDir}/shared_prefs")
-                  if (zipFile.length() > 0) {
-                    val uri = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
-                      emailIntent.flags = Intent.FLAG_GRANT_READ_URI_PERMISSION
-                      FileProvider.getUriForFile(mContext, BuildConfig.APPLICATION_ID + ".fileprovider", zipFile)
-                    } else {
-                      Uri.parse("file://${zipFile.absoluteFile}")
-                    }
-                    emailIntent.action = Intent.ACTION_SEND
-                    emailIntent.type = "application/octet-stream"
-                    emailIntent.putExtra(Intent.EXTRA_STREAM, uri)
-                    emailIntent.putExtra(Intent.EXTRA_EMAIL, arrayOf(if (!IS_GOOGLEPLAY) "568920427@qq.com" else "rRemix.me@gmail.com"))
-                  }
-                } catch (e: Exception) {
-                  Timber.w(e)
-                }
-              }
-            } else {
-              emailIntent.action = Intent.ACTION_SENDTO
-              emailIntent.data = Uri.parse(if (!IS_GOOGLEPLAY) "mailto:568920427@qq.com" else "mailto:rRemix.me@gmail.com")
-            }
-
-            if (Util.isIntentAvailable(this, emailIntent)) {
-              startActivity(emailIntent)
-            } else {
-              ToastUtil.show(this, R.string.not_found_email)
-            }
-//            Intent.createChooser(data,"Email")
-          })
-        }
+        .positiveText(R.string.yes)
+        .negativeText(R.string.no)
+        .neutralText(R.string.cancel)
+        .onPositive { dialog, which -> send(true) }
+        .onNegative { dialog, which -> send(false) }
+        .onNeutral { dialog, which -> dialog.cancel() }
         .show()
   }
 
@@ -659,7 +755,6 @@ class SettingActivity : ToolbarActivity(), FolderChooserDialog.FolderCallback, F
         }.show()
   }
 
-
   /**
    * 恢复移除的歌曲
    */
@@ -668,7 +763,6 @@ class SettingActivity : ToolbarActivity(), FolderChooserDialog.FolderCallback, F
     contentResolver.notifyChange(MediaStore.Audio.Media.EXTERNAL_CONTENT_URI, null)
     ToastUtil.show(mContext, R.string.alread_restore_songs)
   }
-
 
   /**
    * 播放列表导出
@@ -786,6 +880,8 @@ class SettingActivity : ToolbarActivity(), FolderChooserDialog.FolderCallback, F
             ImageUriRequest.DOWNLOAD_SOURCE = which
             SPUtil.putValue(mContext, SETTING_KEY.NAME,
                 SETTING_KEY.ALBUM_COVER_DOWNLOAD_SOURCE, which)
+            setting_cover_source_text.text = getString(
+                if (which == 0) R.string.cover_download_from_lastfm else R.string.cover_download_from_netease)
           }
           true
         }
@@ -857,9 +953,9 @@ class SettingActivity : ToolbarActivity(), FolderChooserDialog.FolderCallback, F
               DiskCache.init(mContext, "lyric")
               //清除fresco缓存
               Fresco.getImagePipeline().clearCaches()
-              mHandler.sendEmptyMessage(CLEAR_FINISH)
-              mNeedRefreshAdapter = true
               ImageUriRequest.clearUriCache()
+              mNeedRefreshAdapter = true
+              mHandler.sendEmptyMessage(CLEAR_FINISH)
             }
           }.start()
         }.show()
@@ -958,27 +1054,62 @@ class SettingActivity : ToolbarActivity(), FolderChooserDialog.FolderCallback, F
   }
 
   /**
-   * 配置过滤大小
+   * 设置黑名单
    */
-  private fun configFilterSize() {
-    //读取以前设置
-    var position = 0
-    for (i in mScanSize.indices) {
-      position = i
-      if (mScanSize[i] == MediaStoreUtil.SCAN_SIZE) {
-        break
-      }
-    }
-    getBaseDialog(mContext)
-        .title(R.string.set_filter_size)
-        .items("0K", "500K", "1MB", "2MB", "5MB")
-        .itemsCallbackSingleChoice(position) { dialog, itemView, which, text ->
-          SPUtil.putValue(mContext, SETTING_KEY.NAME, SETTING_KEY.SCAN_SIZE,
-              mScanSize[which])
-          MediaStoreUtil.SCAN_SIZE = mScanSize[which]
-          contentResolver.notifyChange(MediaStore.Audio.Media.EXTERNAL_CONTENT_URI, null)
-          true
-        }.show()
+  private fun configBlackList(blackList: Set<String> = SPUtil.getStringSet(this, SETTING_KEY.NAME, SETTING_KEY.BLACKLIST)) {
+    val items = ArrayList<String>(blackList)
+    items.sortWith(Comparator { left, right -> File(left).name.compareTo(File(right).name) })
+
+    getBaseDialog(this)
+        .items(items)
+        .itemsCallback { dialog, itemView, position, text ->
+          getBaseDialog(this)
+              .title(R.string.remove_from_blacklist)
+              .content(getString(R.string.do_you_want_remove_from_blacklist, text))
+              .onPositive { dialog, which ->
+                val mutableSet = LinkedHashSet<String>(blackList)
+                val it = mutableSet.iterator()
+                while (it.hasNext()) {
+                  if (it.next().contentEquals(text)) {
+                    it.remove()
+                    break
+                  }
+                }
+                SPUtil.putStringSet(this, SETTING_KEY.NAME, SETTING_KEY.BLACKLIST, mutableSet)
+                contentResolver.notifyChange(MediaStore.Audio.Media.EXTERNAL_CONTENT_URI, null)
+              }
+              .positiveText(R.string.confirm)
+              .negativeText(R.string.cancel)
+              .show()
+        }
+        .title(R.string.blacklist)
+        .neutralText(R.string.clear)
+        .positiveText(R.string.add)
+        .onAny { dialog, which ->
+          when (which) {
+            DialogAction.NEUTRAL -> {
+              //clear
+              getBaseDialog(this)
+                  .title(R.string.clear_blacklist_title)
+                  .content(R.string.clear_blacklist_content)
+                  .negativeText(R.string.cancel)
+                  .positiveText(R.string.confirm)
+                  .onPositive { dialog, which ->
+                    SPUtil.putStringSet(this, SETTING_KEY.NAME, SETTING_KEY.BLACKLIST, LinkedHashSet<String>())
+                    contentResolver.notifyChange(MediaStore.Audio.Media.EXTERNAL_CONTENT_URI, null)
+                  }
+                  .show()
+            }
+            DialogAction.POSITIVE -> {
+              //add
+              val builder = Builder(this)
+                  .chooseButton(R.string.choose_folder)
+                  .tag("BlackList")
+              builder.show()
+            }
+          }
+        }
+        .show()
   }
 
   private fun changeBottomOfPlayingScreen() {
@@ -1013,7 +1144,6 @@ class SettingActivity : ToolbarActivity(), FolderChooserDialog.FolderCallback, F
   override fun onSaveInstanceState(outState: Bundle) {
     super.onSaveInstanceState(outState)
     outState.putBoolean(EXTRA_RECREATE, mNeedRecreate)
-    //        outState.putBoolean("fromColorChoose", mFromColorChoose);
     outState.putBoolean(EXTRA_REFRESH_ADAPTER, mNeedRefreshAdapter)
   }
 
@@ -1025,7 +1155,14 @@ class SettingActivity : ToolbarActivity(), FolderChooserDialog.FolderCallback, F
         disposable.dispose()
       }
     }
+  }
 
+  override fun onSharedPreferenceChanged(sharedPreferences: SharedPreferences?, key: String) {
+    if(key == SETTING_KEY.DESKTOP_LYRIC_SHOW){
+      setting_lrc_float_switch.setOnCheckedChangeListener(null)
+      setting_lrc_float_switch.isChecked = SPUtil.getValue(this, SETTING_KEY.NAME, SETTING_KEY.DESKTOP_LYRIC_SHOW,false)
+      setting_lrc_float_switch.setOnCheckedChangeListener(checkedChangedListener)
+    }
   }
 
   override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
@@ -1037,8 +1174,28 @@ class SettingActivity : ToolbarActivity(), FolderChooserDialog.FolderCallback, F
           mHandler.sendEmptyMessage(RECREATE)
         }
       }
-    } else if (requestCode == REQUEST_EQ) {
+    } else if (requestCode == Crop.REQUEST_PICK) {
+      //选择图片
+      val cacheDir = DiskCache.getDiskCacheDir(this,
+          "thumbnail/player")
+      if (data == null || !cacheDir.exists() && !cacheDir.mkdirs()) {
+        ToastUtil.show(this, R.string.setting_error)
+        return
+      }
 
+      val oldFile = File(cacheDir, "player.jpg")
+      if (oldFile.exists()) {
+        oldFile.delete()
+      }
+      val destination = Uri.fromFile(oldFile)
+      Crop.of(data.data, destination)
+          .withAspect(resources.displayMetrics.widthPixels, resources.displayMetrics.heightPixels)
+          .start(this)
+    } else if (requestCode == Crop.REQUEST_CROP) {
+      if (data == null || Crop.getOutput(data) == null) {
+        ToastUtil.show(this, R.string.setting_error)
+        return
+      }
     }
   }
 

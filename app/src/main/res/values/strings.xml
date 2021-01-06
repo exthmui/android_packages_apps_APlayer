@@ -336,7 +336,8 @@
   <string name="export_fail">Export failed:%s</string>
   <string name="export_success">Export success</string>
   <string name="cover_download_source">Cover download source</string>
-  <string name="cover_download_source_tip">Default behavior is download from LastFM</string>
+  <string name="cover_download_from_lastfm">Download from LastFm</string>
+  <string name="cover_download_from_netease">Download from Netease</string>
   <string name="update_notification">Notification for update</string>
   <string name="update_notification_description">Notification for update</string>
   <string name="downloading">Downloading</string>
@@ -370,7 +371,7 @@
   <string name="restore_songs">Restore songs</string>
   <string name="restore_songs_tip">Restore songs removed from the library</string>
   <string name="alread_restore_songs">Removed songs have been restored</string>
-  <string name="speed_range_tip">The range is 0.5 to 1.5</string>
+  <string name="speed_range_tip">The range is 0.5 to 2</string>
   <string name="show_displayname">Display filename</string>
   <string name="show_displayname_tip">Replace the title with the filename in the song list</string>
   <string name="accent_color">Accent color</string>
@@ -413,4 +414,18 @@
   <string name="thanks_text">"Thanks for CoolApk ID @Lin_kin_p open source project ! "</string>
   <string name="thanks_summary">This software has been authorized to modify \n and release based on the GPL V3 protocol.</string>
   <string name="touhou">You found a new hidden entrance!</string>
+  <string name="clear">Clear</string>
+  <string name="add">Add</string>
+  <string name="clear_blacklist_title">Clear Blacklist</string>
+  <string name="clear_blacklist_content">Do you want to clear blacklist?</string>
+  <string name="blacklist">BlackList</string>
+  <string name="remove_from_blacklist">Remove from blacklist</string>
+  <string name="do_you_want_remove_from_blacklist">Do you want to remove %s from the blacklist?</string>
+  <string name="blacklist_tip">The content of these folder will be hidden from you library</string>
+  <string name="yes">Yes</string>
+  <string name="no">No</string>
+  <string name="now_playing_screen_background">Background</string>
+  <string name="now_playing_screen_theme">Follow theme</string>
+  <string name="now_playing_screen_cover">Follow album cover</string>
+  <string name="now_playing_screen_custom">Custom</string>
 </resources>
