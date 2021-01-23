@@ -47,12 +47,6 @@ import remix.myplayer.misc.handler.MsgHandler
 import remix.myplayer.misc.handler.OnHandleMessage
 import remix.myplayer.misc.interfaces.OnItemClickListener
 import remix.myplayer.misc.receiver.ExitReceiver
-import remix.myplayer.misc.update.DownloadService
-import remix.myplayer.misc.update.DownloadService.Companion.ACTION_DISMISS_DIALOG
-import remix.myplayer.misc.update.DownloadService.Companion.ACTION_DOWNLOAD_COMPLETE
-import remix.myplayer.misc.update.DownloadService.Companion.ACTION_SHOW_DIALOG
-import remix.myplayer.misc.update.UpdateAgent
-import remix.myplayer.misc.update.UpdateListener
 import remix.myplayer.request.ImageUriRequest
 import remix.myplayer.request.LibraryUriRequest
 import remix.myplayer.request.RequestConfig
@@ -159,9 +153,6 @@ open class MainActivity : MenuActivity() {
 
     val intentFilter = IntentFilter()
     //        intentFilter.addAction(ACTION_LOAD_FINISH);
-    intentFilter.addAction(ACTION_DOWNLOAD_COMPLETE)
-    intentFilter.addAction(ACTION_SHOW_DIALOG)
-    intentFilter.addAction(ACTION_DISMISS_DIALOG)
     registerLocalReceiver(mReceiver, intentFilter)
 
     //初始化控件
@@ -171,8 +162,6 @@ open class MainActivity : MenuActivity() {
     //初始化测滑菜单
     setUpDrawerLayout()
     setUpViewColor()
-    //handler
-    mRefreshHandler.postDelayed({ this.checkUpdate() }, 500)
 
     //清除多选显示状态
     MultipleChoice.isActiveSomeWhere = false
@@ -672,15 +661,6 @@ open class MainActivity : MenuActivity() {
     }
   }
 
-  private fun checkUpdate() {
-    if (!IS_GOOGLEPLAY && !mAlreadyCheck) {
-      UpdateAgent.forceCheck = false
-      UpdateAgent.listener = UpdateListener(mContext)
-      mAlreadyCheck = true
-      UpdateAgent.check(this)
-    }
-  }
-
   private fun checkIsAndroidO(context: Context, path: String) {
     if (!TextUtils.isEmpty(path) && path != mInstallPath) {
       mInstallPath = path
@@ -736,13 +716,6 @@ open class MainActivity : MenuActivity() {
       if (action.isNullOrEmpty()) {
         return
       }
-      val mainActivity = mRef.get() ?: return
-      when (action) {
-        ACTION_DOWNLOAD_COMPLETE -> mainActivity.checkIsAndroidO(context, intent.getStringExtra(DownloadService.EXTRA_PATH))
-        ACTION_SHOW_DIALOG -> mainActivity.showForceDialog()
-        ACTION_DISMISS_DIALOG -> mainActivity.dismissForceDialog()
-      }
-
     }
   }
 
@@ -757,11 +730,6 @@ open class MainActivity : MenuActivity() {
     private const val REQUEST_INSTALL_PACKAGES = 2
 
     private val IMAGE_SIZE = DensityUtil.dip2px(App.getContext(), 108f)
-
-    /**
-     * 检查更新
-     */
-    private var mAlreadyCheck: Boolean = false
   }
 }
 

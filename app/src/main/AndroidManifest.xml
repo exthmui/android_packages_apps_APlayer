@@ -167,9 +167,6 @@
     <service
       android:exported="false"
       android:name=".service.MusicService"/>
-    <service
-      android:exported="false"
-      android:name=".misc.update.DownloadService"/>
 
     <!-- 桌面部件 -->
     <receiver

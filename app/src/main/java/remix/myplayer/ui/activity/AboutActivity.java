@@ -49,8 +49,6 @@ public class AboutActivity extends ToolbarActivity {
   protected void onCreate(Bundle savedInstanceState) {
     super.onCreate (savedInstanceState);
     setContentView (R.layout.activity_about);
-    btn = (Button) findViewById (R.id.check_update);
-    btn.setOnClickListener (new update ());
     img = (ImageView) findViewById (R.id.about_img);
     img.setOnClickListener (new touhou ());
     ButterKnife.bind (this);
@@ -64,16 +62,6 @@ public class AboutActivity extends ToolbarActivity {
     }
 
     setUpToolbar (getString (R.string.about));
-  }
-
-  //检查更新
-  class update implements View.OnClickListener {
-    @Override
-    public void onClick(View arg0) {
-      Uri uri = Uri.parse ("https://www.coolapk.com/apk/remix.myplayer");
-      Intent it = new Intent (Intent.ACTION_VIEW, uri);
-      startActivity (it);
-    }
   }
 
   //又到了我最爱的彩蛋环节～

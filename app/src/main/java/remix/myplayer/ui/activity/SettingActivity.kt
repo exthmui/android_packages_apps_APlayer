@@ -58,8 +58,6 @@ import remix.myplayer.misc.handler.MsgHandler
 import remix.myplayer.misc.handler.OnHandleMessage
 import remix.myplayer.misc.receiver.HeadsetPlugReceiver
 import remix.myplayer.misc.tryLaunch
-import remix.myplayer.misc.update.UpdateAgent
-import remix.myplayer.misc.update.UpdateListener
 import remix.myplayer.misc.zipFrom
 import remix.myplayer.misc.zipOutputStream
 import remix.myplayer.request.ImageUriRequest

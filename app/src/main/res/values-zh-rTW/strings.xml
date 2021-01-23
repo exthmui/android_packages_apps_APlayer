@@ -120,9 +120,6 @@
   <string name="delete">移除</string>
   <string name="ring">鈴聲</string>
   <string name="join">新增</string>
-  <string name="update_error">更新失敗: %s</string>
-  <string name="update_ignore">該版本已忽略更新</string>
-  <string name="no_update">當前已經是最新版本</string>
   <string name="search">搜尋</string>
   <string name="timer_close">定時關閉</string>
   <string name="feedback_contact_hint">請輸入您的 WeChat ID/QQ ID</string>
@@ -150,7 +147,6 @@
   <string name="eq_setting">等化器設定</string>
   <string name="feedback_info">問題回報</string>
   <string name="about_info">關於</string>
-  <string name="check_update">檢查更新</string>
   <string name="clear_cache">清除暫存</string>
   <string name="support_develop">支援我們</string>
   <string name="choose">選擇</string>
@@ -344,10 +340,6 @@
   <string name="download_complete">下載完成</string>
   <string name="download_complete_to_do">下載完成,點擊安裝</string>
   <string name="plz_give_install_permission">請授予安裝未知來源應用程式的權限</string>
-  <string name="update">更新</string>
-  <string name="new_version_found">發現新版本</string>
-  <string name="ignore_this_version">忽略該版本</string>
-  <string name="ignore_check_update_forever">不再檢查更新</string>
   <string name="empty_path_report_to_developer">安裝路徑為空,請回報問題給開發人員</string>
   <string name="rename">重新命名</string>
   <string name="no_equalizer">沒有找到等化器</string>
