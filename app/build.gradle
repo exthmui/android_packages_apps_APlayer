@@ -68,7 +68,7 @@ android {
             versionNameSuffix '-DEBUG'
 
             ndk {
-                abiFilters 'armeabi-v7a', 'arm64-v8a', 'x86'
+                abiFilters 'armeabi-v7a', 'arm64-v8a', 'x86', 'x86_64'
             }
         }
         release {
@@ -84,12 +84,6 @@ android {
                 abiFilters 'armeabi-v7a', 'arm64-v8a', 'x86'
             }
         }
-
-        android.applicationVariants.all {variant ->
-            variant.outputs.all {
-                outputFileName = "APlayer_v${defaultConfig.versionName}_${variant.productFlavors[0].name}_${new Date().format("yyyy-MM-dd HH-mm")}.apk"
-            }
-        }
     }
 
     externalNativeBuild {
@@ -100,19 +94,6 @@ android {
 
     androidExtensions {
         experimental = true
-    }
-
-    productFlavors {
-        assistant91 {}
-        baidu {}
-        anzhuomarket {}
-        xiaomi {}
-        kuan {}
-        google {}
-        exthm {}
-        productFlavors.all {flavor ->
-            flavor.manifestPlaceholders = [CHANNEL_VALUE: name]
-        }
     }
 
     lintOptions {
